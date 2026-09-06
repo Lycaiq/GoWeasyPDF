@@ -1,7 +1,8 @@
 # Etapa 1: compilacion del binario de Go
-# Usamos la imagen oficial de Go sobre Debian para que el binario resultante
-# sea compatible con la imagen de runtime que también es Debian.
-FROM golang:1.22-bullseye AS builder
+# Usamos golang:1.25-bookworm para que coincida con la directiva 'go' del go.mod.
+# El runtime sigue siendo bullseye-slim porque el binario es estático (CGO_ENABLED=0)
+# y no arrastra dependencias de libc de la imagen de compilacion.
+FROM golang:1.25-bookworm AS builder
 
 WORKDIR /app
 
