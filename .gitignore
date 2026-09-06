@@ -1,32 +1,59 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
+# --- Binarios y artefactos de compilacion ---
+# El binario de salida del proyecto
+goweasyprint
+/bin/
+
+# Binarios generales de Go
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Binario generado por go test -c
 *.test
 
-# Code coverage profiles and other test artifacts
+# --- Artefactos de pruebas y cobertura ---
 *.out
 coverage.*
 *.coverprofile
 profile.cov
 
-# Dependency directories (remove the comment below to include it)
+# --- Dependencias ---
+# Descomenta si quieres no commitear el vendor
 # vendor/
 
-# Go workspace file
+# --- Workspace de Go (multi-modulo) ---
 go.work
 go.work.sum
 
-# env file
+# --- Variables de entorno y secretos ---
+# Nunca subas credenciales al repositorio
 .env
+.env.*
+*.pem
+*.key
+secrets/
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# --- IDEs y editores ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Archivos temporales del sistema ---
+/tmp/
+*.tmp
+*.log
+
+# --- Docker ---
+# No ignoramos Dockerfile ni docker-compose.yml a proposito;
+# esos si queremos que esten en el repo
+.dockerignore
+
+# --- Artefactos de profiling de Go ---
+cpu.prof
+mem.prof
