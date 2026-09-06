@@ -1,7 +1,6 @@
 # Etapa 1: compilacion del binario de Go
-# Usamos golang:1.25-bookworm para que coincida con la directiva 'go' del go.mod.
-# El runtime sigue siendo bullseye-slim porque el binario es estático (CGO_ENABLED=0)
-# y no arrastra dependencias de libc de la imagen de compilacion.
+# golang:1.25-bookworm coincide con la directiva 'go' del go.mod y tiene
+# soporte nativo para arm64 (Apple Silicon) y amd64.
 FROM golang:1.25-bookworm AS builder
 
 WORKDIR /app
@@ -17,45 +16,45 @@ COPY . .
 # CGO_ENABLED=0 produce un binario estático que no depende de librerías del SO.
 # -ldflags="-s -w" elimina la tabla de símbolos y la info de debug,
 # recortando el tamaño del binario ~30% sin afectar el comportamiento en runtime.
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# No fijamos GOARCH para que tome la arquitectura de la plataforma donde se construye
+# (amd64 en Linux/Windows x86, arm64 en Apple Silicon). El binario resultante
+# corre nativamente sin emulación.
+RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags="-s -w" \
     -o /app/goweasyprint \
     ./cmd/server
 
 
 # Etapa 2: imagen final de runtime
-# debian:bullseye-slim y no Alpine porque WeasyPrint necesita la cadena
-# Pango/Cairo/GDK-Pixbuf. En Alpine esos paquetes requieren parches y builds
-# customizados que se rompen con cada actualización de weasyprint.
-# Con Debian todo viene probado y empaquetado por el equipo de Debian/Ubuntu.
-FROM debian:bullseye-slim
+# Usamos debian:bookworm-slim (Debian 12, stable actual) en lugar de bullseye
+# porque bullseye está en EOL y su repositorio de seguridad tiene paquetes
+# que ya no se encuentran en los mirrors, lo que rompe el apt-get install.
+# bookworm tiene soporte activo, sus paquetes son más recientes y
+# mantiene la misma cadena Pango/Cairo/GDK-Pixbuf que necesita WeasyPrint.
+FROM debian:bookworm-slim
 
 # Todo en un solo RUN para que Docker cree una única capa y el 'rm -rf'
 # del final realmente reduzca el tamaño de la imagen. Si lo separáramos en
 # múltiples RUN, la capa de apt-get quedaría guardada aunque borremos los archivos.
+#
+# Cambios respecto a bullseye:
+#   - libffi7 -> libffi8  (renombrado en bookworm)
+#   - pip install necesita --break-system-packages (PEP 668, activo desde bookworm)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        # Runtime de Python para ejecutar weasyprint
         python3 \
         python3-pip \
-        # Cadena de renderizado: sin Pango no hay layout de texto
         libpango-1.0-0 \
         libpangocairo-1.0-0 \
         libpangoft2-1.0-0 \
-        # Cairo para el renderizado vectorial del PDF
         libcairo2 \
-        # GDK-Pixbuf para imágenes raster (PNG, JPEG) dentro del HTML
-        libgdk-pixbuf2.0-0 \
-        # Dependencias de Python para los bindings C de cairo y cffi
-        libffi7 \
-        # Parser XML/HTML y transformaciones XSLT
+        libgdk-pixbuf-2.0-0 \
+        libffi8 \
         libxml2 \
         libxslt1.1 \
-        # Fuentes base; sin esto los PDFs generados tienen cuadros en lugar de letras
         fonts-liberation \
         fonts-dejavu-core \
-        # Necesario para que weasyprint descargue fuentes externas vía HTTPS
         ca-certificates \
-    && pip3 install --no-cache-dir weasyprint \
+    && pip3 install --no-cache-dir --break-system-packages weasyprint \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

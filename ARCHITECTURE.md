@@ -150,4 +150,6 @@ GoWeasyPDF/
 
 ## Decisiones de Dockerfile
 
-Usamos `debian:bullseye-slim` como imagen base en lugar de Alpine porque WeasyPrint depende de la cadena de renderizado de Pango/Cairo/GDK-Pixbuf, que en Alpine requiere parches y compilaciones customizadas que son frágiles de mantener. Debian tiene todos esos paquetes probados y disponibles con `apt-get`, lo que hace el build reproducible y predecible.
+Usamos `debian:bookworm-slim` (Debian 12) como imagen base de runtime en lugar de Alpine porque WeasyPrint depende de la cadena de renderizado de Pango/Cairo/GDK-Pixbuf, que en Alpine requiere parches y compilaciones customizadas que son frágiles de mantener. Debian tiene todos esos paquetes probados y disponibles con `apt-get`, lo que hace el build reproducible y predecible.
+
+Usamos `bullseye` inicialmente pero migramos a `bookworm` porque Debian 11 (bullseye) entró en EOL y su repositorio de seguridad comenzó a tener paquetes inaccesibles en los mirrors, rompiendo el `apt-get install` durante el build.
