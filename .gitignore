@@ -50,9 +50,8 @@ Thumbs.db
 *.log
 
 # --- Docker ---
-# No ignoramos Dockerfile ni docker-compose.yml a proposito;
-# esos si queremos que esten en el repo
-.dockerignore
+# Dockerfile y .dockerignore viven en el repo a proposito;
+# son necesarios para que cualquiera pueda reproducir el build
 
 # --- Artefactos de profiling de Go ---
 cpu.prof

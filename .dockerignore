@@ -1,0 +1,50 @@
+# El código fuente no entra en la imagen final; solo lo necesita el builder.
+# Aun así, evitar mandarlo al daemon de Docker reduce el tiempo de build
+# en repos grandes.
+
+# Control de versiones
+.git
+.gitignore
+
+# Código fuente (el builder lo copia desde el contexto, pero el runtime no lo necesita;
+# Docker igual lo transfiere al daemon si no está aquí)
+# Nota: NO ignoramos el código fuente porque el builder stage sí lo necesita.
+# Lo que sí ignoramos son los artefactos que no aportan nada al build.
+
+# Artefactos de desarrollo y CI
+*.test
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+cpu.prof
+mem.prof
+
+# Binarios locales (el builder compila el suyo propio dentro del contenedor)
+goweasyprint
+/bin/
+
+# Variables de entorno con secretos
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# Documentación (no necesaria en la imagen)
+*.md
+ARCHITECTURE.md
+LICENSE
+
+# IDEs y sistema operativo
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Archivos temporales
+*.tmp
+*.log
+/tmp/
