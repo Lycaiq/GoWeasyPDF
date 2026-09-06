@@ -45,10 +45,11 @@ func (h *GeneratorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// que suficiente para cualquier documento razonable.
 	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
 
-	var req generatorRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// Diferenciamos entre body demasiado grande y JSON malformado
-		// para dar mensajes de error útiles.
+	// Leemos el body completo antes de parsear el JSON. Así el error de
+	// MaxBytesReader se propaga limpiamente sin que json.Decoder lo envuelva
+	// en su propia capa de error, lo que hace casi imposible hacer errors.As.
+	rawBody, err := io.ReadAll(r.Body)
+	if err != nil {
 		var maxBytesErr *http.MaxBytesError
 		if errors.As(err, &maxBytesErr) {
 			writeJSON(w, http.StatusRequestEntityTooLarge, errorResponse{
@@ -56,12 +57,21 @@ func (h *GeneratorHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		if errors.Is(err, io.EOF) {
-			writeJSON(w, http.StatusBadRequest, errorResponse{
-				Error: "el body está vacío",
-			})
-			return
-		}
+		writeJSON(w, http.StatusBadRequest, errorResponse{
+			Error: "no se pudo leer el body de la petición",
+		})
+		return
+	}
+
+	if len(rawBody) == 0 {
+		writeJSON(w, http.StatusBadRequest, errorResponse{
+			Error: "el body está vacío",
+		})
+		return
+	}
+
+	var req generatorRequest
+	if err := json.Unmarshal(rawBody, &req); err != nil {
 		writeJSON(w, http.StatusBadRequest, errorResponse{
 			Error: "JSON inválido: " + err.Error(),
 		})
